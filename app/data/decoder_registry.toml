@@ -1,0 +1,9 @@
+# Known decoder support: NORAD -> satnogsdecoders reference module.
+# Editable by hand. Rows already in dashboard.db win over this file on re-seed.
+# The satnogs-decoder corpus 'satellites' table was empty on 2026-07-09, so this
+# starts with one worked example (from docs/MVP_ARCHITECTURE.md) — replace freely.
+
+[[satellite]]
+norad = 68506
+module = "aepex"
+notes = "example seed entry; verify before trusting"

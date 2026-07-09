@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+{% if setup_error %}
+<div class="panel" id="setup-state">
+  <h3>Setup needed</h3>
+  <p>{{ setup_error }}</p>
+  <p class="muted">Point <code>SATNOGS_SIGNAL_DB</code> at satnogs-signal's
+    <code>triage.db</code> (written by its <code>scripts/run_poller.py</code>).</p>
+</div>
+{% else %}
+<form class="filters" method="get" action="/">
+  <label>P≥ <input name="min_p" value="{{ filters.min_p }}" size="4"></label>
+  <label>NORAD <input name="norad" value="{{ filters.norad }}" size="7"></label>
+  <label>Station <input name="station" value="{{ filters.station }}" size="5"></label>
+  <label>Mode <input name="mode" value="{{ filters.mode }}" size="6"></label>
+  <label>Label
+    <select name="label">
+      <option value="" {% if filters.label == '' %}selected{% endif %}>any</option>
+      <option value="1" {% if filters.label == '1' %}selected{% endif %}>likely signal</option>
+      <option value="0" {% if filters.label == '0' %}selected{% endif %}>likely noise</option>
+    </select></label>
+  <label>Reviewed
+    <select name="reviewed">
+      {% for opt in ["any", "no", "yes"] %}
+      <option value="{{ opt }}" {% if filters.reviewed == opt %}selected{% endif %}>{{ opt }}</option>
+      {% endfor %}
+    </select></label>
+  <button class="btn" type="submit">Filter</button>
+  <a class="btn" href="/">Reset</a>
+  <span class="muted">{{ rows|length }} shown · store: {{ stats.n }} rows,
+    {{ stats.n_signal }} predicted signal</span>
+</form>
+<p class="muted">{{ settings.signal_model_note }}</p>
+<table class="dense">
+  <thead><tr>
+    <th>P(signal)</th><th>obs</th><th>NORAD</th><th>mode</th><th>station</th>
+    <th>time (UTC)</th><th>chips</th><th>actions</th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td><span class="chip {{ r.band }}">{{ '%.3f'|format(r.p_signal) }}</span></td>
+    <td><a href="{{ r.satnogs_url }}" target="_blank" rel="noopener">{{ r.obs_id }}</a></td>
+    <td>{{ r.norad }}</td>
+    <td>{{ r.mode }}</td>
+    <td>{{ r.station }}</td>
+    <td>{{ r.timestamp }}</td>
+    <td>
+      <span class="chip {{ r.band }}">S</span>
+      <span class="chip {% if r.identity_status == 'done' %}hi{% elif r.identity_status == 'failed' %}bad{% elif r.identity_status %}run{% else %}lo{% endif %}"
+            title="identity: {{ r.identity_status or 'not run' }}">I {{ r.identity_status or '—' }}</span>
+      <span class="chip {% if r.decoder_status == 'done' %}hi{% elif r.decoder_status == 'failed' %}bad{% elif r.decoder_status %}run{% else %}lo{% endif %}"
+            title="decoder: {{ r.decoder_status or 'not run' }}">D {{ r.decoder_status or '—' }}</span>
+      <span class="chip {% if r.review %}mid{% else %}lo{% endif %}">R {{ r.review or '—' }}</span>
+    </td>
+    <td>
+      <a class="btn" href="/observations/{{ r.obs_id }}/analysis" target="_blank">analysis</a>
+      <a class="btn" href="{{ r.satnogs_url }}" target="_blank" rel="noopener">SatNOGS</a>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}
