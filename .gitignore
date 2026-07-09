@@ -223,3 +223,6 @@ __marimo__/
 # Project-local directories
 /docs/
 /tests/
+
+# Dashboard runtime artifacts
+/dashboard.db

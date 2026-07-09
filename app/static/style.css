@@ -1,0 +1,36 @@
+:root { --bg:#111418; --panel:#1a1f26; --text:#d7dde5; --muted:#8b96a5;
+  --hi:#3fb950; --mid:#d29922; --lo:#6e7681; --bad:#f85149; --accent:#58a6ff; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--text);
+  font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.topbar { display:flex; gap:12px; align-items:baseline; padding:8px 14px;
+  background:var(--panel); border-bottom:1px solid #2b3138; }
+.brand { color:var(--text); font-weight:700; text-decoration:none; }
+main { padding:12px 14px; }
+.muted { color:var(--muted); }
+table.dense { border-collapse:collapse; width:100%; }
+table.dense th, table.dense td { padding:3px 8px; border-bottom:1px solid #262c34;
+  text-align:left; white-space:nowrap; }
+table.dense th { color:var(--muted); position:sticky; top:0; background:var(--bg); }
+.chip { display:inline-block; padding:0 6px; border-radius:8px; font-size:11px;
+  border:1px solid #2b3138; }
+.chip.hi { color:var(--hi); border-color:var(--hi); }
+.chip.mid { color:var(--mid); border-color:var(--mid); }
+.chip.lo { color:var(--lo); }
+.chip.bad { color:var(--bad); border-color:var(--bad); }
+.chip.run { color:var(--accent); border-color:var(--accent); }
+.panel { background:var(--panel); border:1px solid #2b3138; border-radius:6px;
+  padding:10px 12px; margin-bottom:12px; }
+.panel h3 { margin:0 0 8px; font-size:12px; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--muted); }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:12px; }
+.btn { display:inline-block; background:#21262d; color:var(--text); border:1px solid #363c44;
+  border-radius:5px; padding:2px 10px; font:inherit; cursor:pointer; text-decoration:none; }
+.btn:hover { border-color:var(--accent); }
+form.inline { display:inline; }
+.filters { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; align-items:center; }
+.filters input, .filters select { background:#0d1117; color:var(--text);
+  border:1px solid #363c44; border-radius:5px; padding:2px 6px; font:inherit; width:auto; }
+img.waterfall { max-width:100%; border:1px solid #2b3138; border-radius:4px; }
+pre.evidence { white-space:pre-wrap; margin:6px 0 0; color:var(--muted); }
+.next-action { font-size:14px; color:var(--hi); }
