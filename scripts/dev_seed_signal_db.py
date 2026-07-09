@@ -1,6 +1,9 @@
 """Create a small fake triage.db for local UI development (not for tests).
 
 Usage: uv run python scripts/dev_seed_signal_db.py [dest.db]
+
+Also the canonical committed home of the fixture schema constants —
+tests/fixtures/factories.py imports them from here.
 """
 from __future__ import annotations
 
@@ -8,8 +11,27 @@ import sqlite3
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tests.fixtures.factories import TRIAGE_SCHEMA, DEFAULTS  # noqa: E402
+TRIAGE_SCHEMA = """
+CREATE TABLE predictions (
+    obs_id          INTEGER PRIMARY KEY,
+    norad           INTEGER,
+    mode            TEXT,
+    station         INTEGER,
+    timestamp       TEXT,
+    waterfall_url   TEXT,
+    p_signal        REAL,
+    predicted_label INTEGER,
+    scored_at       TEXT
+);
+"""
+
+DEFAULTS = {
+    "norad": 63239, "mode": "FSK", "station": 1234,
+    "timestamp": "2026-07-09T00:00:00Z",
+    "waterfall_url": "https://example.invalid/waterfall.png",
+    "p_signal": 0.9, "predicted_label": 1,
+    "scored_at": "2026-07-09T01:00:00Z",
+}
 
 
 def main() -> None:
