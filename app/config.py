@@ -10,18 +10,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 
 
-def _default_identity_cmd(id_dir: Path) -> list[str]:
-    return shlex.split(
-        f"docker compose -f {id_dir}/docker-compose.yml run --rm -T "
-        f"-v {SCRIPTS_DIR}:/runner app python /runner/run_identity_json.py"
-    )
-
-
-def _default_decoder_cmd(decoder_dir: Path) -> list[str]:
-    return shlex.split(
-        f"docker compose -f {decoder_dir}/compose.yaml run --rm -T "
-        f"-v {SCRIPTS_DIR}:/runner app python /runner/run_decoder_json.py"
-    )
+def _engine_cmd(compose_file: Path, runner_script: str) -> list[str]:
+    # argv list, not a shell string: sibling checkout paths may contain spaces
+    return ["docker", "compose", "-f", str(compose_file), "run", "--rm", "-T",
+            "-v", f"{SCRIPTS_DIR}:/runner", "app", "python",
+            f"/runner/{runner_script}"]
 
 
 @dataclass
@@ -47,9 +40,11 @@ class Settings:
 
     def __post_init__(self) -> None:
         if not self.identity_cmd:
-            self.identity_cmd = _default_identity_cmd(self.id_dir)
+            self.identity_cmd = _engine_cmd(self.id_dir / "docker-compose.yml",
+                                            "run_identity_json.py")
         if not self.decoder_cmd:
-            self.decoder_cmd = _default_decoder_cmd(self.decoder_dir)
+            self.decoder_cmd = _engine_cmd(self.decoder_dir / "compose.yaml",
+                                           "run_decoder_json.py")
 
     @classmethod
     def from_env(cls) -> "Settings":
