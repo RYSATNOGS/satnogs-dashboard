@@ -144,6 +144,12 @@ def list_reviews(conn, obs_id: int) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def reviewed_obs_ids(conn) -> list[int]:
+    """Obs ids with ANY local review event (small, human-marked set)."""
+    rows = conn.execute("SELECT DISTINCT obs_id FROM review_events").fetchall()
+    return [r["obs_id"] for r in rows]
+
+
 def seed_registry(conn, toml_path: Path) -> int:
     """Idempotently load registry entries; DB rows win over TOML on re-seed."""
     if not toml_path.exists():

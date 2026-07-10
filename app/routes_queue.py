@@ -15,6 +15,13 @@ def _int_or_none(v: str | None) -> int | None:
         return None
 
 
+def _float_or_none(v: str | None) -> float | None:
+    try:
+        return float(v) if v not in (None, "") else None
+    except ValueError:
+        return None
+
+
 @router.get("/")
 def queue_page(request: Request, min_p: str | None = None, norad: str | None = None,
                station: str | None = None, mode: str | None = None,
@@ -22,12 +29,18 @@ def queue_page(request: Request, min_p: str | None = None, norad: str | None = N
     s = request.app.state.settings
     templates = request.app.state.templates
     conn = request.app.state.db
+    obs_in = obs_not_in = None
+    if reviewed == "yes":
+        obs_in = ddb.reviewed_obs_ids(conn)
+    elif reviewed == "no":
+        obs_not_in = ddb.reviewed_obs_ids(conn)
     try:
         rows = signal.queue(
             s.signal_db, limit=s.queue_limit,
-            min_p=float(min_p) if min_p not in (None, "") else None,
+            min_p=_float_or_none(min_p),
             norad=_int_or_none(norad), station=_int_or_none(station),
             mode=mode or None, label=_int_or_none(label),
+            obs_in=obs_in, obs_not_in=obs_not_in,
         )
         store_stats = signal.stats(s.signal_db)
         setup_error = None
@@ -44,10 +57,6 @@ def queue_page(request: Request, min_p: str | None = None, norad: str | None = N
         r["identity_status"] = identity_map.get(r["obs_id"])
         r["decoder_status"] = decoder_map.get(r["obs_id"])
         r["review"] = review_map.get(r["obs_id"])
-    if reviewed == "yes":
-        rows = [r for r in rows if r["review"]]
-    elif reviewed == "no":
-        rows = [r for r in rows if not r["review"]]
 
     return templates.TemplateResponse(request, "queue.html", {
         "rows": rows, "stats": store_stats, "setup_error": setup_error,

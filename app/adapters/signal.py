@@ -36,7 +36,8 @@ def _map_row(r: sqlite3.Row) -> dict:
 
 def queue(db_path: Path, *, limit: int = 200, min_p: float | None = None,
           norad: int | None = None, station: int | None = None,
-          mode: str | None = None, label: int | None = None) -> list[dict]:
+          mode: str | None = None, label: int | None = None,
+          obs_in: list[int] | None = None, obs_not_in: list[int] | None = None) -> list[dict]:
     conn = _connect_ro(db_path)
     try:
         clauses = ["obs_id IS NOT NULL", "p_signal IS NOT NULL"]
@@ -51,6 +52,16 @@ def queue(db_path: Path, *, limit: int = 200, min_p: float | None = None,
             clauses.append("mode = ?"); args.append(mode)
         if label is not None:
             clauses.append("predicted_label = ?"); args.append(label)
+        if obs_in is not None:
+            if not obs_in:
+                return []
+            marks = ",".join("?" * len(obs_in))
+            clauses.append(f"obs_id IN ({marks})")
+            args.extend(obs_in)
+        if obs_not_in:
+            marks = ",".join("?" * len(obs_not_in))
+            clauses.append(f"obs_id NOT IN ({marks})")
+            args.extend(obs_not_in)
         rows = conn.execute(
             f"""SELECT * FROM predictions WHERE {' AND '.join(clauses)}
                 ORDER BY p_signal DESC, obs_id DESC LIMIT ?""",
