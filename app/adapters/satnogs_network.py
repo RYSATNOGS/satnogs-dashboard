@@ -57,7 +57,9 @@ def get_observation(conn, settings, obs_id: int, *, http: httpx.Client | None = 
         resp = client.get(url, headers=headers)
         resp.raise_for_status()
         payload = resp.json()
-    except httpx.HTTPError as exc:
+        if not isinstance(payload, list):
+            raise ValueError(f"unexpected payload shape: {type(payload).__name__}")
+    except (httpx.HTTPError, ValueError) as exc:
         if cached and cached.get("result") is not None:
             return cached["result"]  # stale beats broken
         raise NetworkUnavailable(f"SatNOGS Network fetch failed: {exc}") from exc
