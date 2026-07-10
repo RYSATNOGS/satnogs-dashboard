@@ -42,13 +42,21 @@ class JobRunner:
 
     def _run(self, engine: str, obs_id: int, params: dict,
              fn: Callable[[], tuple[dict, str | None]]) -> None:
-        ddb.put_job(self._conn, engine, obs_id, params, status=RUNNING)
+        key = (engine, obs_id, param_hash(params))
         try:
+            ddb.put_job(self._conn, engine, obs_id, params, status=RUNNING)
             result, version = fn()
             ddb.put_job(self._conn, engine, obs_id, params, status=DONE,
                         result=result, engine_version=version)
         except Exception as exc:  # engine failures become normal UI states
-            ddb.put_job(self._conn, engine, obs_id, params, status=FAILED, error=str(exc))
+            try:
+                ddb.put_job(self._conn, engine, obs_id, params,
+                            status=FAILED, error=str(exc))
+            except Exception:
+                pass  # DB unavailable: eviction below still unblocks resubmission
+        finally:
+            with self._lock:
+                self._futures.pop(key, None)
 
     def shutdown(self) -> None:
         self._pool.shutdown(wait=True, cancel_futures=True)
