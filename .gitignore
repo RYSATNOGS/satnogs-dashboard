@@ -226,3 +226,4 @@ __marimo__/
 
 # Dashboard runtime artifacts
 /dashboard.db
+/dashboard.db-*
