@@ -3,6 +3,8 @@
 # exports UV_PROJECT_ENVIRONMENT itself).
 UV_PROJECT_ENVIRONMENT ?= $(HOME)/.local/share/uv-project-envs/satnogs-dashboard
 export UV_PROJECT_ENVIRONMENT
+# Owner standard: python 3.14 everywhere (matches the python:3.14-slim siblings)
+export UV_PYTHON = 3.14
 
 .PHONY: test dev seed lock
 

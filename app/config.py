@@ -10,11 +10,33 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 
 
+FORWARD_ENV_KEYS = ("satnogs_db_api_key", "HUGGING_FACE_HUB_TOKEN")
+
+
+def _load_dotenv(path: Path) -> None:
+    """Minimal stdlib .env loader (KEY=VALUE lines). Existing environ wins."""
+    if not path.exists():
+        return
+    for raw in path.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip("'\"")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
 def _engine_cmd(compose_file: Path, runner_script: str) -> list[str]:
     # argv list, not a shell string: sibling checkout paths may contain spaces
-    return ["docker", "compose", "-f", str(compose_file), "run", "--rm", "-T",
-            "-v", f"{SCRIPTS_DIR}:/runner", "app", "python",
-            f"/runner/{runner_script}"]
+    cmd = ["docker", "compose", "-f", str(compose_file), "run", "--rm", "-T",
+           "-v", f"{SCRIPTS_DIR}:/runner"]
+    # forward dashboard-held tokens into engine containers only when set, so
+    # the engines' own env_file values are never clobbered with blanks
+    for key in FORWARD_ENV_KEYS:
+        if os.environ.get(key):
+            cmd += ["-e", key]
+    return [*cmd, "app", "python", f"/runner/{runner_script}"]
 
 
 @dataclass
@@ -48,6 +70,7 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> "Settings":
+        _load_dotenv(REPO_ROOT / ".env")
         env = os.environ
         siblings = REPO_ROOT.parent
         id_dir = Path(env.get("SATNOGS_ID_DIR", siblings / "satnogs-id"))
@@ -59,7 +82,8 @@ class Settings:
             decoder_dir=decoder_dir,
             identity_cmd=shlex.split(env.get("IDENTITY_CMD", "")),
             decoder_cmd=shlex.split(env.get("DECODER_CMD", "")),
-            network_token=env.get("SATNOGS_NETWORK_TOKEN", ""),
+            network_token=env.get("SATNOGS_NETWORK_TOKEN",
+                                  env.get("satnogs_network_api_key", "")),
             network_ttl_hours=float(env.get("NETWORK_TTL_HOURS", "24")),
             p_high=float(env.get("P_HIGH", "0.9")),
             p_low=float(env.get("P_LOW", "0.5")),
