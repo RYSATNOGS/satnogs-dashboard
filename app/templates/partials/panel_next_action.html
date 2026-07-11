@@ -1,0 +1,9 @@
+<div class="panel" id="panel-next_action">
+  <h3>next action</h3>
+  <p class="next-action">{{ recommendation.action }}</p>
+  <ul class="muted">
+    {% for r in recommendation.reasons %}<li>{{ r }}</li>{% endfor %}
+  </ul>
+  <button class="btn" hx-get="/observations/{{ obs_id }}/panels/next_action"
+          hx-target="#panel-next_action" hx-swap="outerHTML">recompute</button>
+</div>

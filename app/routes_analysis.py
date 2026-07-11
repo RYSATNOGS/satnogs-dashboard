@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
-from . import db as ddb
+from . import db as ddb, rules
 from .adapters import signal
 
 router = APIRouter()
@@ -42,14 +42,20 @@ def _panel_context(request: Request, obs_id: int, panel: str) -> dict:
                           if obs and obs.get("norad") is not None else None)
     elif panel == "review":
         ctx["events"] = ddb.list_reviews(conn, obs_id)
+    elif panel == "next_action":
+        ident_row = ddb.latest_results(conn, "identity", obs_id)
+        dec_row = ddb.latest_results(conn, "decoder", obs_id)
+        ctx["recommendation"] = rules.next_action(
+            obs,
+            (ident_row or {}).get("result"),
+            (dec_row or {}).get("result"),
+            ddb.review_state(conn, obs_id),
+            p_high=s.p_high, p_low=s.p_low)
     return ctx
 
 
 def _panel_response(request: Request, obs_id: int, panel: str) -> HTMLResponse:
     templates = request.app.state.templates
-    if panel == "next_action":  # replaced by Task 14
-        return HTMLResponse(f'<div class="panel" id="panel-{panel}"><h3>{panel}</h3>'
-                            '<p class="muted">not wired yet</p></div>')
     return templates.TemplateResponse(
         request, f"partials/panel_{panel}.html", _panel_context(request, obs_id, panel))
 

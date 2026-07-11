@@ -6,7 +6,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import (HTMLResponse, JSONResponse, PlainTextResponse,
                                RedirectResponse)
 
-from . import db as ddb
+from . import db as ddb, rules
 from .adapters import decoder, identity, satnogs_network
 from .routes_analysis import _panel_response, load_obs
 
@@ -110,5 +110,11 @@ def export_bundle(request: Request, obs_id: int):
             "decoder": ddb.latest_results(conn, "decoder", obs_id),
         },
         "review_events": ddb.list_reviews(conn, obs_id),
-        "next_action": None,  # filled by Task 14
+        "next_action": rules.next_action(
+            obs,
+            (ddb.latest_results(conn, "identity", obs_id) or {}).get("result"),
+            (ddb.latest_results(conn, "decoder", obs_id) or {}).get("result"),
+            ddb.review_state(conn, obs_id),
+            p_high=request.app.state.settings.p_high,
+            p_low=request.app.state.settings.p_low),
     })
