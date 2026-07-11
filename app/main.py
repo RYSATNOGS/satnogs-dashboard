@@ -33,4 +33,9 @@ def create_app(settings: Settings) -> FastAPI:
     return app
 
 
-app = create_app(Settings.from_env())
+def app_factory() -> FastAPI:
+    """Composition root for `uvicorn app.main:app_factory --factory` (make dev).
+
+    Env reading and dashboard.db creation happen here, never at import time.
+    """
+    return create_app(Settings.from_env())

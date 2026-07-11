@@ -224,6 +224,5 @@ __marimo__/
 /docs/
 /tests/
 
-# Dashboard runtime artifacts
-/dashboard.db
-/dashboard.db-*
+# Dashboard runtime artifacts (sqlite + WAL sidecars)
+/dashboard.db*

@@ -12,7 +12,7 @@ test:
 	uv run --extra dev pytest $(ARGS)
 
 dev:
-	uv run uvicorn app.main:app --reload
+	uv run uvicorn app.main:app_factory --factory --reload
 
 seed:
 	uv run python scripts/dev_seed_signal_db.py dev_triage.db
