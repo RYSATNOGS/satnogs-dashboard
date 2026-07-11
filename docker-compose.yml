@@ -17,3 +17,24 @@ services:
     volumes:
       - ${PWD}/..:${PWD}/..
       - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  # Fills the review queue: runs satnogs-signal's poller on an interval so
+  # ../satnogs-signal/triage.db populates itself (run.sh builds the image).
+  # $$ keeps the interval expansion for the container shell, not compose.
+  poller:
+    image: satnogs-signal
+    working_dir: ${PWD}/../satnogs-signal
+    environment:
+      HF_HOME: /hf-cache
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ${PWD}/..:${PWD}/..
+      - hf-cache:/hf-cache
+    command: sh -c 'while true; do python scripts/run_poller.py || echo "poller run failed — retrying next interval"; sleep $${POLL_INTERVAL_S:-900}; done'
+    restart: unless-stopped
+
+volumes:
+  hf-cache:
