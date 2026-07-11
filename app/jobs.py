@@ -6,12 +6,16 @@ know when they are replacing cached evidence (spec requirement).
 """
 from __future__ import annotations
 
+import logging
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor
+from functools import partial
 from typing import Callable
 
 from . import db as ddb
 from .models import DONE, FAILED, QUEUED, RUNNING, param_hash
+
+log = logging.getLogger(__name__)
 
 
 class JobRunner:
@@ -37,7 +41,9 @@ class JobRunner:
             if row and row["status"] == DONE and not rerun:
                 return row
             ddb.put_job(self._conn, engine, obs_id, params, status=QUEUED)
-            self._futures[key] = self._pool.submit(self._run, engine, obs_id, params, fn)
+            fut = self._pool.submit(self._run, engine, obs_id, params, fn)
+            fut.add_done_callback(partial(self._surface_crash, key))
+            self._futures[key] = fut
         return self.status(engine, obs_id, params)
 
     def _run(self, engine: str, obs_id: int, params: dict,
@@ -49,14 +55,24 @@ class JobRunner:
             ddb.put_job(self._conn, engine, obs_id, params, status=DONE,
                         result=result, engine_version=version)
         except Exception as exc:  # engine failures become normal UI states
-            try:
-                ddb.put_job(self._conn, engine, obs_id, params,
-                            status=FAILED, error=str(exc))
-            except Exception:
-                pass  # DB unavailable: eviction below still unblocks resubmission
+            # this FAILED write may itself raise (DB gone): eviction below
+            # still unblocks resubmission and _surface_crash logs the escape
+            ddb.put_job(self._conn, engine, obs_id, params,
+                        status=FAILED, error=str(exc))
         finally:
             with self._lock:
                 self._futures.pop(key, None)
+
+    @staticmethod
+    def _surface_crash(key: tuple[str, int, str], fut: Future) -> None:
+        """Nothing calls .result() on these futures: an exception escaping
+        _run (e.g. the FAILED write itself dying) would otherwise vanish
+        with the job stuck in a non-terminal status."""
+        if fut.cancelled():
+            return
+        exc = fut.exception()
+        if exc is not None:
+            log.error("job crashed without recording a status: %s", key, exc_info=exc)
 
     def shutdown(self) -> None:
         self._pool.shutdown(wait=True, cancel_futures=True)
