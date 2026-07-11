@@ -1,0 +1,19 @@
+# The dashboard container IS the environment (sibling convention). Engine
+# buttons run `docker compose` for satnogs-id / satnogs-decoder through the
+# host docker socket — bind mounts requested that way resolve on the HOST,
+# so the repo and its siblings are mounted at their host paths (${PWD}),
+# exactly "the same absolute paths the defaults expect".
+services:
+  dashboard:
+    build: .
+    ports:
+      - "8000:8000"
+    working_dir: ${PWD}
+    environment:
+      DASHBOARD_DB: ${DASHBOARD_DB:-${PWD}/dashboard.db}
+      SATNOGS_SIGNAL_DB: ${SATNOGS_SIGNAL_DB:-${PWD}/../satnogs-signal/triage.db}
+      SATNOGS_ID_DIR: ${SATNOGS_ID_DIR:-${PWD}/../satnogs-id}
+      SATNOGS_DECODER_DIR: ${SATNOGS_DECODER_DIR:-${PWD}/../satnogs-decoder}
+    volumes:
+      - ${PWD}/..:${PWD}/..
+      - /var/run/docker.sock:/var/run/docker.sock
