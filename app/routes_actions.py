@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi.responses import (HTMLResponse, JSONResponse, PlainTextResponse,
+                               RedirectResponse)
 
 from . import db as ddb
-from .adapters import decoder, identity
+from .adapters import decoder, identity, satnogs_network
 from .routes_analysis import _panel_response, load_obs
 
 router = APIRouter()
+
+REVIEW_EVENTS = ("seen", "reviewed", "needs_decoder_review",
+                 "identity_ambiguous", "vetted_on_satnogs")
 
 
 def _respond(request: Request, obs_id: int, panel: str):
@@ -64,3 +70,45 @@ def ksy_artifact(request: Request, obs_id: int):
     return PlainTextResponse(hints["ksy_text"], headers={
         "Content-Disposition":
             f"attachment; filename=obs{obs_id}_inferred_REVIEW_ONLY.ksy"})
+
+
+@router.post("/observations/{obs_id}/actions/mark")
+def action_mark(request: Request, obs_id: int, event: str = Form(...),
+                note: str = Form("")):
+    if event not in REVIEW_EVENTS:
+        return HTMLResponse("unknown review event", status_code=400)
+    ddb.add_review(request.app.state.db, obs_id, event, note)
+    return _respond(request, obs_id, "review")
+
+
+@router.post("/observations/{obs_id}/actions/refresh_meta")
+def action_refresh_meta(request: Request, obs_id: int):
+    s = request.app.state.settings
+    try:
+        satnogs_network.get_observation(request.app.state.db, s, obs_id, force=True)
+    except satnogs_network.NetworkUnavailable as exc:
+        return HTMLResponse(
+            f'<div class="panel" id="panel-meta"><h3>observation metadata</h3>'
+            f'<p><span class="chip mid">network unavailable</span> {exc.reason}</p>'
+            f'<p class="muted">Cached data (if any) is still shown after reload.</p></div>')
+    return _respond(request, obs_id, "meta")
+
+
+@router.get("/observations/{obs_id}/export.json")
+def export_bundle(request: Request, obs_id: int):
+    obs = load_obs(request, obs_id)
+    if obs is None:
+        return JSONResponse({"error": "unknown observation"}, status_code=404)
+    conn = request.app.state.db
+    meta_row = ddb.get_result(conn, "network_meta", obs_id, {"v": 1})
+    return JSONResponse({
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "observation": obs,
+        "network_meta": meta_row["result"] if meta_row else None,
+        "engine_results": {
+            "identity": ddb.latest_results(conn, "identity", obs_id),
+            "decoder": ddb.latest_results(conn, "decoder", obs_id),
+        },
+        "review_events": ddb.list_reviews(conn, obs_id),
+        "next_action": None,  # filled by Task 14
+    })

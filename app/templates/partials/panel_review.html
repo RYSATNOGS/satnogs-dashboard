@@ -1,0 +1,24 @@
+<div class="panel" id="panel-review">
+  <h3>local review state</h3>
+  {% if events %}
+  <table class="dense">
+    {% for e in events %}
+    <tr><td><span class="chip mid">{{ e.event }}</span></td>
+        <td class="muted">{{ e.created_at }}</td><td>{{ e.note }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">No local review events yet. These never leave this machine.</p>{% endif %}
+  <form class="inline" method="post" action="/observations/{{ obs_id }}/actions/mark"
+        hx-post="/observations/{{ obs_id }}/actions/mark"
+        hx-target="#panel-review" hx-swap="outerHTML">
+    <select name="event">
+      <option value="reviewed">mark reviewed</option>
+      <option value="needs_decoder_review">needs maintainer review</option>
+      <option value="identity_ambiguous">identity ambiguous</option>
+      <option value="vetted_on_satnogs">vetted on SatNOGS</option>
+      <option value="seen">seen</option>
+    </select>
+    <input name="note" placeholder="note (opt)" size="18">
+    <button class="btn" type="submit">mark</button>
+  </form>
+</div>

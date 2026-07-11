@@ -8,7 +8,7 @@ from .adapters import signal
 
 router = APIRouter()
 
-PANELS = ("signal", "related", "meta", "identity", "decode", "next_action")
+PANELS = ("signal", "related", "meta", "identity", "decode", "review", "next_action")
 
 
 def load_obs(request: Request, obs_id: int) -> dict | None:
@@ -40,6 +40,8 @@ def _panel_context(request: Request, obs_id: int, panel: str) -> dict:
         ctx["job"] = ddb.latest_results(conn, "decoder", obs_id)
         ctx["registry"] = (ddb.registry_lookup(conn, obs["norad"])
                           if obs and obs.get("norad") is not None else None)
+    elif panel == "review":
+        ctx["events"] = ddb.list_reviews(conn, obs_id)
     return ctx
 
 
