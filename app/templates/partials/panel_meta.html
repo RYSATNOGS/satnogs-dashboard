@@ -1,0 +1,20 @@
+<div class="panel" id="panel-meta">
+  <h3>observation metadata (SatNOGS Network)</h3>
+  {% if meta %}
+  <table class="dense">
+    <tr><td class="muted">start</td><td>{{ meta.start }}</td></tr>
+    <tr><td class="muted">end</td><td>{{ meta.end }}</td></tr>
+    <tr><td class="muted">station</td><td>{{ meta.station_name }}</td></tr>
+    <tr><td class="muted">mode</td><td>{{ meta.transmitter_mode }}</td></tr>
+    <tr><td class="muted">NORAD (network)</td><td>{{ meta.norad_cat_id }}</td></tr>
+    <tr><td class="muted">vetted status</td><td>{{ meta.vetted_status }}</td></tr>
+  </table>
+  {% else %}
+  <p class="muted">No cached metadata. Use “refresh SatNOGS metadata” to fetch it.</p>
+  {% endif %}
+  <form class="inline" method="post" action="/observations/{{ obs_id }}/actions/refresh_meta"
+        hx-post="/observations/{{ obs_id }}/actions/refresh_meta"
+        hx-target="#panel-meta" hx-swap="outerHTML">
+    <button class="btn" type="submit">refresh SatNOGS metadata</button>
+  </form>
+</div>

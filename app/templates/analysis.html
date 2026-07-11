@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}obs {{ obs_id }} · analysis{% endblock %}
+{% block content %}
+<div class="panel">
+  <h3>Observation {{ obs_id }}</h3>
+  <p>
+    <a class="btn" href="{{ obs.satnogs_url }}" target="_blank" rel="noopener">Open on SatNOGS</a>
+    <a class="btn" href="/">← queue</a>
+    <a class="btn" href="/observations/{{ obs_id }}/export.json">export bundle</a>
+    <span class="chip">P(signal) {{ '%.3f'|format(obs.p_signal) }}</span>
+    <span class="muted">NORAD {{ obs.norad }} · {{ obs.mode }} · station {{ obs.station }}
+      · {{ obs.timestamp }}</span>
+  </p>
+  {% if waterfall %}<img class="waterfall" src="{{ waterfall }}" alt="waterfall for {{ obs_id }}">
+  {% else %}<p class="muted">No waterfall URL yet — refresh SatNOGS metadata below.</p>{% endif %}
+</div>
+<div class="grid">
+  {% for p in panels %}
+  <div hx-get="/observations/{{ obs_id }}/panels/{{ p }}" hx-trigger="load" hx-swap="outerHTML">
+    <div class="panel"><h3>{{ p }}</h3><p class="muted">loading…</p></div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

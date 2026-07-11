@@ -1,0 +1,7 @@
+<div class="panel" id="panel-signal">
+  <h3>signal</h3>
+  <p><span class="chip {{ band }}">P(signal) {{ '%.3f'|format(obs.p_signal) }}</span>
+     <span class="chip lo">{{ obs.signal_label }}</span></p>
+  <p class="muted">scored {{ obs.scored_at }}</p>
+  <p class="muted">{{ settings.signal_model_note }}</p>
+</div>

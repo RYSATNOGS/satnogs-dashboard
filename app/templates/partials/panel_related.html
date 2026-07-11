@@ -1,0 +1,15 @@
+<div class="panel" id="panel-related">
+  <h3>related observations · NORAD {{ obs.norad }}</h3>
+  {% if related %}
+  <table class="dense">
+    {% for r in related %}
+    <tr>
+      <td><span class="chip lo">{{ '%.3f'|format(r.p_signal) }}</span></td>
+      <td><a href="/observations/{{ r.obs_id }}/analysis" target="_blank">{{ r.obs_id }}</a></td>
+      <td><a href="{{ r.satnogs_url }}" target="_blank" rel="noopener">SatNOGS</a></td>
+      <td class="muted">{{ r.timestamp }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">No other scored observations for this NORAD.</p>{% endif %}
+</div>
