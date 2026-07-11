@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -33,6 +34,10 @@ def create_app(settings: Settings) -> FastAPI:
     @app.get("/healthz")
     def healthz() -> dict:
         return {"ok": True}
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon() -> FileResponse:  # browsers request this path unprompted
+        return FileResponse(APP_DIR / "static" / "favicon.png", media_type="image/png")
 
     return app
 
