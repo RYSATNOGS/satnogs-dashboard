@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from . import db as ddb
 from .config import Settings
 from .jobs import JobRunner
+from .routes_actions import router as actions_router
 from .routes_analysis import router as analysis_router
 from .routes_queue import router as queue_router
 
@@ -26,6 +27,7 @@ def create_app(settings: Settings) -> FastAPI:
     ddb.seed_registry(app.state.db, APP_DIR / "data" / "decoder_registry.toml")
     app.include_router(queue_router)
     app.include_router(analysis_router)
+    app.include_router(actions_router)
     app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 
     @app.get("/healthz")

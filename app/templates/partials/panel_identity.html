@@ -1,0 +1,62 @@
+<div class="panel" id="panel-identity"
+     {% if job and job.status in ("queued", "running") %}
+     hx-get="/observations/{{ obs_id }}/panels/identity"
+     hx-trigger="load delay:2s" hx-swap="outerHTML"
+     {% endif %}>
+  <h3>identity (Doppler, satnogs-id)</h3>
+  {% if not job %}
+    <p class="muted">Not run yet. Runs in the satnogs-id container; results are cached.</p>
+  {% elif job.status in ("queued", "running") %}
+    <p><span class="chip run">{{ job.status }}</span> identify in progress…</p>
+  {% elif job.status == "failed" %}
+    <p><span class="chip bad">failed</span> {{ job.error }}</p>
+  {% else %}{% set res = job.result %}
+    {% if res.status in ("ok", "ambiguous") %}
+      <p>
+        <span class="chip {% if res.ambiguous %}mid{% else %}hi{% endif %}">
+          {{ "AMBIGUOUS" if res.ambiguous else "OK" }}</span>
+        best NORAD <strong>{{ res.best_norad }}</strong>
+        · margin {{ res.margin_khz }} kHz · {{ res.n_points }} points
+        {% if res.epoch_gap_days is not none %}· epoch gap {{ res.epoch_gap_days }} d{% endif %}
+      </p>
+      {% if res.epoch_gap_days is not none and res.epoch_gap_days > 14 %}
+        <p class="chip mid">stale candidates: TLE epoch gap {{ res.epoch_gap_days }} days</p>
+      {% endif %}
+      {% if res.ambiguous %}
+        <p class="muted">Margin below threshold — wait for another pass or rerun
+          with a launch designator.</p>
+      {% endif %}
+      <table class="dense">
+        <tr><th>#</th><th>NORAD</th><th>RMS (kHz)</th></tr>
+        {% for c in res.ranking %}
+        <tr><td>{{ loop.index }}</td><td>{{ c.norad }}</td><td>{{ c.rms_khz }}</td></tr>
+        {% endfor %}
+      </table>
+      {% if res.name_tag %}
+        <p>name-tag: <span class="chip {% if res.name_tag.agrees %}hi{% else %}bad{% endif %}">
+          {{ res.name_tag.tier }}</span>
+          NORAD {{ res.name_tag.norad }} — {{ res.name_tag.reason }}</p>
+      {% endif %}
+    {% elif res.status == "rate_limited" %}
+      <p><span class="chip mid">rate limited</span> {{ res.error }} — try again later.</p>
+    {% elif res.status == "no_track" %}
+      <p><span class="chip mid">no usable track</span> {{ res.error }}
+        <span class="muted">— nothing to fit; eyeball the waterfall.</span></p>
+    {% elif res.status == "missing_h5" %}
+      <p><span class="chip mid">missing h5 artifact</span> {{ res.error }}
+        <span class="muted">— the observation has no artifact to identify from.</span></p>
+    {% else %}
+      <p><span class="chip bad">{{ res.status }}</span> {{ res.error }}</p>
+    {% endif %}
+    <p class="muted">cached {{ job.updated_at }} · params {{ job.params }}
+      · {{ job.engine_version or "" }}</p>
+  {% endif %}
+  <form class="inline" method="post" action="/observations/{{ obs_id }}/actions/identify"
+        hx-post="/observations/{{ obs_id }}/actions/identify"
+        hx-target="#panel-identity" hx-swap="outerHTML">
+    <input name="intdes" placeholder="intdes (opt)" size="10">
+    <input name="catalog" placeholder="catalog path (opt)" size="14">
+    {% if job %}<input type="hidden" name="rerun" value="1">{% endif %}
+    <button class="btn" type="submit">{{ "rerun identify" if job else "run identify" }}</button>
+  </form>
+</div>

@@ -34,12 +34,14 @@ def _panel_context(request: Request, obs_id: int, panel: str) -> dict:
     elif panel == "meta":
         cached = ddb.get_result(conn, "network_meta", obs_id, {"v": 1})
         ctx["meta"] = cached["result"] if cached and cached.get("result") else None
+    elif panel == "identity":
+        ctx["job"] = ddb.latest_results(conn, "identity", obs_id)
     return ctx
 
 
 def _panel_response(request: Request, obs_id: int, panel: str) -> HTMLResponse:
     templates = request.app.state.templates
-    if panel in ("identity", "decode", "next_action"):  # replaced by Tasks 10/13/15
+    if panel in ("decode", "next_action"):  # replaced by Tasks 12/14
         return HTMLResponse(f'<div class="panel" id="panel-{panel}"><h3>{panel}</h3>'
                             '<p class="muted">not wired yet</p></div>')
     return templates.TemplateResponse(
