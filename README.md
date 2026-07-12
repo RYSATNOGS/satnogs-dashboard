@@ -10,11 +10,21 @@ A thin web app that composes three sibling engines:
 
 ## Quick start
 
-Needs `git` and Docker. Linux or macOS; on Windows use WSL2.
+Needs `git` and Docker. Linux, macOS, or WSL2:
 
     git clone https://github.com/RYASTRA/satnogs-dashboard.git
     cd satnogs-dashboard
-    docker compose up
+    ./scripts/setup.sh
+
+Native Windows without WSL2, in PowerShell:
+
+    git clone https://github.com/RYASTRA/satnogs-dashboard.git
+    cd satnogs-dashboard
+    powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+
+The setup script asks for three optional API tokens (press Enter to skip
+any), writes them to `.env`, then starts the stack. Prefer to skip it? Plain
+`docker compose up` still works and runs everything tokenless.
 
 Open http://localhost:8000. The first run takes a few minutes: Docker
 builds the three engine images straight from their GitHub repos (nothing
@@ -32,8 +42,9 @@ Update to the latest code with `docker compose up --build`.
 
 ## API tokens (optional)
 
-Everything starts without tokens; add them to `.env` (copy `.env.example`)
-for full functionality:
+Everything starts without tokens. The easiest way to add them is the setup
+script above (re-run it with `--reconfigure` / `-Reconfigure` to change them).
+To edit by hand, copy `.env.example` to `.env` and fill in any of:
 
 - `satnogs_network_api_key` — queue polling (from your
   [network.satnogs.org](https://network.satnogs.org) profile).
