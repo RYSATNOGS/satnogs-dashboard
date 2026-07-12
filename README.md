@@ -28,7 +28,7 @@ else to clone or install) and starts all four containers:
 | satnogs-decoder   | decoder-evidence engine, runs on demand           |
 
 Run detached with `docker compose up -d`; stop with `docker compose down`.
-Update to the engines' latest code with `make up` (rebuilds, then starts).
+Update to the latest code with `docker compose up --build`.
 
 ## API tokens (optional)
 
@@ -46,22 +46,7 @@ After editing `.env`, restart: `docker compose up -d`.
 
 ## How it runs
 
-The queue reads satnogs-signal's `triage.db` (shared `data` volume,
-read-only use). The Identify/Decode buttons execute the JSON runner
-scripts inside the always-on id/decoder containers via the docker socket
-and cache results in `dashboard.db`. The app never writes to SatNOGS.
-
-## Development
-
-Host-run dev loop (the uv project env lives outside the tree):
-
-    make dev
-    open http://localhost:8000
-
-No sibling data yet? Seed a fake queue:
-
-    make seed
-    SATNOGS_SIGNAL_DB=dev_triage.db make dev
-
-Tests (offline by default): `make test`
-Live engine smokes: `make test ARGS="-m slow"`
+The queue fills as satnogs-signal scores new observations. The
+Identify/Decode buttons run the engines and cache their results, so
+reviewing an observation is: open it, read the evidence panels, decide.
+The app only ever reads from SatNOGS — it never writes back.
