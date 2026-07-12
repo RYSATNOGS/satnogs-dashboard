@@ -6,7 +6,11 @@ export UV_PROJECT_ENVIRONMENT
 # Owner standard: python 3.14 everywhere (matches the python:3.14-slim siblings)
 export UV_PYTHON = 3.14
 
-.PHONY: test dev seed lock
+.PHONY: up test dev seed lock
+
+# The deployment path: build all four images, start all four containers.
+up:
+	docker compose up --build
 
 test:
 	uv run --extra dev pytest $(ARGS)

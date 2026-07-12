@@ -10,28 +10,30 @@ A thin web app that composes three sibling engines:
 
 ## Quick start
 
-Needs `git` and Docker (with the compose plugin). Linux or macOS; on
-Windows use WSL2.
+Needs `git` and Docker. Linux or macOS; on Windows use WSL2.
 
     git clone https://github.com/RYASTRA/satnogs-dashboard.git
     cd satnogs-dashboard
-    ./run.sh
+    docker compose up
 
-Open http://localhost:8000. The first run takes a few minutes: the script
-clones the three engine repos next to this one and builds their images.
-Run in the background with `./run.sh -d`; stop with `docker compose down`.
+Open http://localhost:8000. The first run takes a few minutes: Docker
+builds the three engine images straight from their GitHub repos (nothing
+else to clone or install) and starts all four containers:
 
-`run.sh` does, in order:
+| container         | role                                              |
+| ----------------- | ------------------------------------------------- |
+| satnogs-dashboard | the web app on :8000                              |
+| satnogs-signal    | scores new observations into the queue every 15 m |
+| satnogs-id        | identification engine, runs on demand             |
+| satnogs-decoder   | decoder-evidence engine, runs on demand           |
 
-1. Clone (or update) `../satnogs-signal`, `../satnogs-id`, `../satnogs-decoder`.
-2. Build their Docker images.
-3. Create `.env` from `.env.example` on first run.
-4. `docker compose up`: the dashboard on :8000 plus a poller that scores new
-   observations into the review queue every 15 minutes.
+Run detached with `docker compose up -d`; stop with `docker compose down`.
+Update to the engines' latest code with `make up` (rebuilds, then starts).
 
 ## API tokens (optional)
 
-Everything starts without tokens; add them to `.env` for full functionality:
+Everything starts without tokens; add them to `.env` (copy `.env.example`)
+for full functionality:
 
 - `satnogs_network_api_key` — queue polling (from your
   [network.satnogs.org](https://network.satnogs.org) profile).
@@ -40,17 +42,18 @@ Everything starts without tokens; add them to `.env` for full functionality:
 - `HUGGING_FACE_HUB_TOKEN` — model downloads
   ([huggingface.co](https://huggingface.co/settings/tokens)).
 
+After editing `.env`, restart: `docker compose up -d`.
+
 ## How it runs
 
-The compose file mounts the repo's parent directory (repo + siblings) at its
-host path plus the docker socket, so the identity/decoder buttons can drive
-the sibling containers from inside the dashboard container — the engines spin
-up on demand per click, and results are cached in `dashboard.db`. The queue
-reads satnogs-signal's `triage.db` read-only. The app never writes to SatNOGS.
+The queue reads satnogs-signal's `triage.db` (shared `data` volume,
+read-only use). The Identify/Decode buttons execute the JSON runner
+scripts inside the always-on id/decoder containers via the docker socket
+and cache results in `dashboard.db`. The app never writes to SatNOGS.
 
 ## Development
 
-Host-run alternative (the uv project env lives outside the tree):
+Host-run dev loop (the uv project env lives outside the tree):
 
     make dev
     open http://localhost:8000

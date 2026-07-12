@@ -1,41 +1,81 @@
-# The dashboard container IS the environment (sibling convention). Engine
-# buttons run `docker compose` for satnogs-id / satnogs-decoder through the
-# host docker socket — bind mounts requested that way resolve on the HOST,
-# so the repo and its siblings are mounted at their host paths (${PWD}),
-# exactly "the same absolute paths the defaults expect".
+# One-command community deploy: `docker compose up` builds all four images
+# (engines straight from their GitHub repos — no sibling checkouts) and
+# starts all four containers. The Identify/Decode buttons `docker exec` into
+# the idle id/decoder containers through the mounted socket; databases live
+# on the shared `data` volume. Host-run development: `make dev`.
 services:
   dashboard:
     build: .
-    image: satnogs-dashboard   # explicit name (else compose derives <project>-<service>)
+    image: satnogs-dashboard
+    container_name: satnogs-dashboard
     ports:
       - "8000:8000"
-    working_dir: ${PWD}
     environment:
-      DASHBOARD_DB: ${DASHBOARD_DB:-${PWD}/dashboard.db}
-      SATNOGS_SIGNAL_DB: ${SATNOGS_SIGNAL_DB:-${PWD}/../satnogs-signal/triage.db}
-      SATNOGS_ID_DIR: ${SATNOGS_ID_DIR:-${PWD}/../satnogs-id}
-      SATNOGS_DECODER_DIR: ${SATNOGS_DECODER_DIR:-${PWD}/../satnogs-decoder}
+      DASHBOARD_DB: /data/dashboard.db
+      SATNOGS_SIGNAL_DB: /data/triage.db
+      IDENTITY_CMD: docker exec satnogs-id python /runner/run_identity_json.py
+      DECODER_CMD: docker exec satnogs-decoder python /runner/run_decoder_json.py
+    env_file:
+      - path: .env
+        required: false
     volumes:
-      - ${PWD}/..:${PWD}/..
+      - data:/data
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - id
+      - decoder
     restart: unless-stopped
 
-  # Fills the review queue: runs satnogs-signal's poller on an interval so
-  # ../satnogs-signal/triage.db populates itself (run.sh builds the image).
+  # Scores new observations into /data/triage.db on an interval.
   # $$ keeps the interval expansion for the container shell, not compose.
-  poller:
+  signal:
+    build: https://github.com/RYASTRA/satnogs-signal.git
     image: satnogs-signal
-    working_dir: ${PWD}/../satnogs-signal
+    container_name: satnogs-signal
+    working_dir: /data
     environment:
       HF_HOME: /hf-cache
     env_file:
       - path: .env
         required: false
     volumes:
-      - ${PWD}/..:${PWD}/..
+      - data:/data
       - hf-cache:/hf-cache
-    command: sh -c 'while true; do python scripts/run_poller.py || echo "poller run failed — retrying next interval"; sleep $${POLL_INTERVAL_S:-900}; done'
+    command: sh -c 'while true; do python /app/scripts/run_poller.py || echo "poller run failed — retrying next interval"; sleep $${POLL_INTERVAL_S:-900}; done'
+    init: true
+    restart: unless-stopped
+
+  # Identity/decoder engines idle until the dashboard execs the runner
+  # scripts (mounted read-only at /runner) inside them.
+  id:
+    build: https://github.com/RYASTRA/satnogs-id.git
+    image: satnogs-id
+    container_name: satnogs-id
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./scripts:/runner:ro
+    command: sleep infinity
+    init: true
+    restart: unless-stopped
+
+  decoder:
+    build: https://github.com/RYASTRA/satnogs-decoder.git
+    image: satnogs-decoder
+    container_name: satnogs-decoder
+    environment:
+      HF_HOME: /hf-cache
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./scripts:/runner:ro
+      - hf-cache:/hf-cache
+    command: sleep infinity
+    init: true
     restart: unless-stopped
 
 volumes:
+  data:
   hf-cache:
