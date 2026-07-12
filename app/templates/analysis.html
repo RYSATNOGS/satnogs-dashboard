@@ -14,11 +14,18 @@
   {% if waterfall %}<img class="waterfall" src="{{ waterfall }}" alt="waterfall for {{ obs_id }}">
   {% else %}<p class="muted">No waterfall URL yet — refresh SatNOGS metadata below.</p>{% endif %}
 </div>
+{# review shown full-width under the chart; next_action is pinned to the very bottom #}
+<div hx-get="/observations/{{ obs_id }}/panels/review" hx-trigger="load" hx-swap="outerHTML">
+  <div class="panel"><h3>review</h3><p class="muted">loading…</p></div>
+</div>
 <div class="grid">
-  {% for p in panels %}
+  {% for p in panels if p not in ("review", "next_action") %}
   <div hx-get="/observations/{{ obs_id }}/panels/{{ p }}" hx-trigger="load" hx-swap="outerHTML">
     <div class="panel"><h3>{{ p }}</h3><p class="muted">loading…</p></div>
   </div>
   {% endfor %}
+</div>
+<div hx-get="/observations/{{ obs_id }}/panels/next_action" hx-trigger="load" hx-swap="outerHTML">
+  <div class="panel"><h3>next_action</h3><p class="muted">loading…</p></div>
 </div>
 {% endblock %}
