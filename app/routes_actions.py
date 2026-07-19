@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import (HTMLResponse, JSONResponse, PlainTextResponse,
@@ -16,10 +17,19 @@ REVIEW_EVENTS = ("seen", "reviewed", "needs_decoder_review",
                  "identity_ambiguous", "vetted_on_satnogs")
 
 
+def _local_redirect(target: str) -> RedirectResponse:
+    """Redirect only to a root-relative path on this application."""
+    target = target.replace("\\", "/")
+    parsed = urlparse(target)
+    if parsed.scheme or parsed.netloc or not parsed.path.startswith("/"):
+        return RedirectResponse("/", status_code=303)
+    return RedirectResponse(target, status_code=303)
+
+
 def _respond(request: Request, obs_id: int, panel: str):
     if request.headers.get("HX-Request"):
         return _panel_response(request, obs_id, panel)
-    return RedirectResponse(f"/observations/{obs_id}/analysis", status_code=303)
+    return _local_redirect(f"/observations/{obs_id}/analysis")
 
 
 @router.post("/observations/{obs_id}/actions/identify")
