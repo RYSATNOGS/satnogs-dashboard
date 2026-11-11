@@ -2,7 +2,7 @@
 # Engine buttons shell out to `docker compose` against the sibling repos, so
 # the image carries a static docker CLI + compose plugin that talk to the
 # host daemon through the socket docker-compose.yml mounts in.
-FROM python:3.14-slim
+FROM python:3.15-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
