@@ -32,7 +32,10 @@ services:
   # Scores new observations into /data/triage.db on an interval.
   # $$ keeps the interval expansion for the container shell, not compose.
   signal:
-    build: https://github.com/RYSATNOGS/satnogs-signal.git
+    build:
+      context: https://github.com/RYSATNOGS/satnogs-signal.git
+      pull: true
+      no_cache: true
     image: satnogs-signal
     container_name: satnogs-signal
     working_dir: /data
@@ -51,7 +54,10 @@ services:
   # Identity/decoder engines idle until the dashboard execs the runner
   # scripts (mounted read-only at /runner) inside them.
   id:
-    build: https://github.com/RYSATNOGS/satnogs-id.git
+    build:
+      context: https://github.com/RYSATNOGS/satnogs-id.git
+      pull: true
+      no_cache: true
     image: satnogs-id
     container_name: satnogs-id
     env_file:
@@ -64,7 +70,10 @@ services:
     restart: unless-stopped
 
   decoder:
-    build: https://github.com/RYSATNOGS/satnogs-decoder.git
+    build:
+      context: https://github.com/RYSATNOGS/satnogs-decoder.git
+      pull: true
+      no_cache: true
     image: satnogs-decoder
     container_name: satnogs-decoder
     environment:
