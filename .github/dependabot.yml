@@ -1,17 +1,7 @@
-# Dependabot opens PRs to keep dependencies patched, on a schedule.
+# Dependabot updates GitHub Actions references.
 # Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 version: 2
 updates:
-  # 1. Python dependencies — reads pyproject.toml + uv.lock
-  - package-ecosystem: "uv"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      python:
-        patterns: ["*"]
-
-  # 2. GitHub Actions — scans .github/workflows/ (checkout, repository-mirroring-action)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -19,9 +9,3 @@ updates:
     groups:
       actions:
         patterns: ["*"]
-
-  # 3. Docker base image — the FROM line in ./Dockerfile (python:3.14-slim)
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"

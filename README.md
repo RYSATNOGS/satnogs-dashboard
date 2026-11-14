@@ -48,7 +48,9 @@ else to clone or install) and starts all four containers:
 | satnogs-decoder   | decoder-evidence engine, runs on demand           |
 
 Run detached with `docker compose up -d`; stop with `docker compose down`.
-Update to the latest code with `docker compose up --build`.
+After pulling the latest code, run `docker compose up --build`. Each dashboard
+build refreshes the Python and Docker CLI images and installs the latest
+compatible stable Python packages from `pyproject.toml`.
 
 ## API tokens (optional)
 

@@ -4,15 +4,15 @@ version = "0.1.0"
 description = "Observation Review Workbench composing satnogs-signal, satnogs-id, satnogs-decoder"
 requires-python = ">=3.14"
 dependencies = [
-    "fastapi>=0.140.13",
-    "uvicorn>=0.52.0",
-    "jinja2>=3.1",
-    "httpx>=0.27",
-    "python-multipart>=0.0.9",
+    "fastapi",
+    "uvicorn",
+    "jinja2",
+    "httpx",
+    "python-multipart",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest"]
 
 [build-system]
 requires = ["hatchling"]

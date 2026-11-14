@@ -5,7 +5,10 @@
 # on the shared `data` volume. Host-run development: `make dev`.
 services:
   dashboard:
-    build: .
+    build:
+      context: .
+      pull: true
+      no_cache: true
     image: satnogs-dashboard
     container_name: satnogs-dashboard
     ports:
